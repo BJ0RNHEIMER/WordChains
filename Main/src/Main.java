@@ -10,6 +10,8 @@ public class Main {
         //Provided reader
         BufferedReader readWords = new BufferedReader(new InputStreamReader(new FileInputStream(fnam)));
         ArrayList<String> words = new ArrayList<String>();
+        long startTime = System.currentTimeMillis();
+
         while (true) {
             String word = readWords.readLine();
             if (word == null) {
@@ -25,8 +27,9 @@ public class Main {
             graph.put(w, new ArrayList<>());
         }
 
+
         //go through each word and create a list of words that matches that words criteria.
-        //kvadratisk O(V^2)
+        // Build graph by comparing all word pairs: O(V^2)
         for (String x : words) {
             for (String y : words) {
                 if (!x.equals(y) && validatePath(x, y)) {
@@ -35,12 +38,21 @@ public class Main {
             }
         }
 
+         /*
+         for(String key : graph.keySet()){
+         System.out.println(key + " : " + graph.get(key));
+         }
+         */
+
+
 
         //provided test reader
         BufferedReader readTest = new BufferedReader(new InputStreamReader(new FileInputStream(ftest)));
         while (true) {
             String line = readTest.readLine();
             if (line == null) {
+                long end = System.currentTimeMillis();
+                System.out.println("Tid: " + (end - startTime) + " ms");
                 break;
             }
             assert line.length() == 11; // indatakoll, om man kör med assertions på
@@ -48,10 +60,14 @@ public class Main {
             String goal = line.substring(6, 11);
 
             System.out.println(bfs(start, goal, graph));
+
         }
     }
 
-    //this method checks if the connection matches the criteria
+    // checks if there is a valid edge from 'from' to 'to'
+    // counts the occurrences of each letter using arrays indexed by the alphabet
+    // ensures that the last four letters of 'from' exist in 'to' with the same multiplicity
+    //complexity is O(1) since the word size as well as the alphabet are constant
     public static boolean validatePath(String from, String to) {
         int[] neededLetters = new int[26];
         int[] gotLetters = new int[26];
@@ -66,41 +82,41 @@ public class Main {
 
         for (int i = 0; i < 26; i++) {
             if (neededLetters[i] > gotLetters[i]) {
-
                 return false;
             }
         }
         return true;
+
     }
+
 
     public static int bfs(String start, String goal, Map<String, List<String>> graph) {
         Queue<String> queue = new LinkedList<>(); //incoming
-        Set<String> visited = new HashSet<>();
-        Map<String, Integer> dist = new HashMap<>();
+        Map<String, Integer> totalDistance = new HashMap<>();
 
+        //add start to initialize BFS
         queue.add(start);
-        dist.put(start, 0);
-        visited.add(start);
+        //distance from start to itself is 0
+        totalDistance.put(start, 0);
 
 
-        while(!queue.isEmpty()){
-
+        while (!queue.isEmpty()) {
             String current = queue.poll();
-            int distance = dist.get(current);
-            if(current.equals(goal)){
-                return dist.get(current);
+
+            //if current is equal to goal, return distance to current node.
+            if (current.equals(goal)) {
+                return totalDistance.get(current);
             }
 
-            for(String matches : graph.get(current)){
-                if (!dist.containsKey(matches)){
-                    visited.add(matches);
-                    distance = dist.get(current)+1;
-                    dist.put(matches, dist.get(current) + 1);
-                    queue.add(matches);
+            // explore all neighbors of current node
+            // update their distance and enqueue them if not visited
+            for (String reachableWord : graph.get(current)) {
+                if (!totalDistance.containsKey(reachableWord)) {
+                    //update totalDistance
+                    totalDistance.put(reachableWord, totalDistance.get(current) + 1);
+                    queue.add(reachableWord);
                 }
-
             }
-
 
         }
 
